@@ -31,6 +31,8 @@ vibe-trading run --no-rich -p "CURRENT TIME: $NOW_ET. THE US STOCK MARKET IS $MK
 
 Autonomous paper-account management pass. You are trading a PAPER account only (fake money) through the selected Alpaca paper connector. Follow your options-desk discipline for reasoning, but trade STOCKS only in this pass.
 
+REAL-TIME PRICES: For any current US stock price you need, call get_market_data with source=\"finnhub\" — that is your real-time source and it is accurate to the minute. Do NOT rely on trading_quote (Alpaca) prices for decisions; they are delayed ~15 minutes and sometimes fail. Use Alpaca ONLY to read your account/positions and to place/close orders, not for the current price. If Finnhub disagrees with Alpaca, trust Finnhub for the live price.
+
 STRICT RULES:
 - Paper account only. Never exceed \$$MAX_ORDER_USD on any single new position.
 - Only symbols in this watchlist: $WATCHLIST.

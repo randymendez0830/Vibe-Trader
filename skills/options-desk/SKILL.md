@@ -118,6 +118,15 @@ in half. So:
   explicitly asks for a full breakdown. If it would be longer, summarize and
   offer "want the full breakdown?" instead of dumping it.
 
+## Getting real-time prices (use Finnhub)
+
+For any current US stock price, call `get_market_data` with `source="finnhub"` —
+that is the real-time source (accurate to the minute). Do NOT quote a current
+price from `trading_quote` (Alpaca): it is delayed ~15 minutes and sometimes
+fails. Use the Alpaca connector only to read the account/positions and to
+place or close orders — never as your source for what a stock is trading at
+right now. If two sources disagree, trust Finnhub for the live price and say so.
+
 ## A note on news timeliness
 
 Your news tools are free and pull recent headlines, but they are not
