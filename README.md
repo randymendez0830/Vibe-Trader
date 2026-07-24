@@ -144,6 +144,14 @@ vibe-trading channels   # follow the prompts; create a bot with @BotFather first
 ```
 Combine with the scheduler (`VIBE_TRADING_ENABLE_SCHEDULER=1` in `.env`) to get a recurring morning scan of your watchlist delivered automatically.
 
+### Letting it actually place trades (paper first!)
+
+The agent can place trades automatically through a broker connector. **Start with
+Alpaca Paper** — free, fake money, zero risk — to prove the agent out before ever
+touching real funds. Full step-by-step guide: **[docs/ALPACA_PAPER_SETUP.md](docs/ALPACA_PAPER_SETUP.md)**.
+
+Quick note on the two platforms people ask about: **TradingView** isn't a broker (it's charts/alerts — the agent can't trade through it), and **Robinhood** has no paper account (connecting it = real money from day one). Alpaca Paper is the right place to start. Interactive Brokers and Tiger paper accounts also work if you prefer them.
+
 ### Things to try first
 
 ```bash
