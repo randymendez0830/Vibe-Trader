@@ -32,12 +32,17 @@ source .venv/bin/activate
 
 echo "==> Installing vibe-trading-ai (this can take a few minutes)..."
 pip install --upgrade pip
-pip install "vibe-trading-ai[anthropic]"
+pip install "vibe-trading-ai[anthropic,channels]"
 
 if [ ! -f .env ]; then
   cp .env.example .env
   echo "==> Created .env — open it and paste in your API keys."
 fi
+
+echo "==> Installing the Options Desk persona skill..."
+mkdir -p ~/.vibe-trading/skills/user
+cp -r skills/options-desk ~/.vibe-trading/skills/user/
+cp .env ~/.vibe-trading/.env 2>/dev/null || true
 
 echo ""
 echo "✅ Done! To start trading research:"

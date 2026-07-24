@@ -117,6 +117,45 @@ Then edit `.env` with your keys and run `vibe-trading`.
 
 ---
 
+## Using your Options Desk agent
+
+This repo ships a custom **`options-desk`** persona skill (in `skills/options-desk/`) that makes the agent behave like a disciplined professional options trader: it checks the volatility environment before any idea, only proposes defined-risk structures, always reports the Greeks / max loss / breakevens / probability of profit, sizes positions at 1–2% max risk, and defines the exit before the entry. `setup.sh` installs it automatically.
+
+### Three ways to interact with it
+
+**1. Terminal chat** — the fastest way to talk to it:
+```bash
+source .venv/bin/activate
+vibe-trading                     # interactive chat
+vibe-trading run -p "What's the IV setup on SPY this week — credit or debit structures?"
+vibe-trading --list              # see past research runs
+vibe-trading --show <RUN_ID>     # re-open any run
+```
+
+**2. Web dashboard** — the visual interface (sessions, backtests, research history):
+```bash
+vibe-trading setup   # one time
+vibe-trading dev     # then open http://localhost:5173
+```
+
+**3. Telegram on your phone** — get research pushed to you:
+```bash
+vibe-trading channels   # follow the prompts; create a bot with @BotFather first
+```
+Combine with the scheduler (`VIBE_TRADING_ENABLE_SCHEDULER=1` in `.env`) to get a recurring morning scan of your watchlist delivered automatically.
+
+### Things to try first
+
+```bash
+vibe-trading run -p "Analyze the current IV rank on AAPL and propose one defined-risk trade using the options-desk format"
+vibe-trading run -p "Backtest a 30-delta SPY iron condor entered weekly over the last 2 years"
+vibe-trading alpha list          # browse 462 pre-built strategies
+```
+
+### One-time requirement: API credits
+
+The agent's brain runs on the Anthropic API, which uses **prepaid credits — separate from any Claude.ai subscription**. Add credits at [console.anthropic.com → Plans & Billing](https://console.anthropic.com/settings/billing) ($5 minimum goes a long way; typical research questions cost a few cents each).
+
 ## Important disclaimers
 
 - **This is research software, not financial advice.** AI agents can be confidently wrong. Backtest results do not guarantee future returns.
