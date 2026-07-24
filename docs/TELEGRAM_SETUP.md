@@ -66,11 +66,35 @@ It should end up looking like:
 
 ## Step 4 — Start the bot and talk to it
 
+First, make sure your Anthropic API key is where the server reads it. The runtime
+checks `~/.vibe-trading/.env` first, so copy your project `.env` (the one with your
+key) into place:
+
+```bash
+cp .env ~/.vibe-trading/.env
+```
+
+The Telegram bot runs *inside* the backend server, so you start the server first,
+then turn the bot on:
+
 ```bash
 source .venv/bin/activate
-vibe-trading channels start     # starts your Telegram bot
-vibe-trading channels status    # confirm it's running
+
+# Start the backend server in the background (logs go to a file, not your screen)
+vibe-trading serve --port 8000 > ~/vibe-server.log 2>&1 &
+
+# Wait ~15 seconds for it to boot, then start the Telegram bot
+vibe-trading channels start     # look for the telegram row → Running: yes
+vibe-trading channels status    # re-check anytime
 ```
+
+**Keep this Terminal window open** — the server (and your bot) run inside it.
+To stop: `vibe-trading channels stop`, then close the window.
+
+> **If the bot replies with an "authentication method" / API-key error:** the
+> server didn't load your key. Run `cp .env ~/.vibe-trading/.env`, then stop the
+> server (`pkill -f "vibe-trading serve"`) and start it again with the two
+> commands above.
 
 Now open your bot in Telegram and message it, e.g.:
 

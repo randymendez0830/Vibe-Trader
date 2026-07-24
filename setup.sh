@@ -42,9 +42,15 @@ fi
 echo "==> Installing the Options Desk persona skill..."
 mkdir -p ~/.vibe-trading/skills/user
 cp -r skills/options-desk ~/.vibe-trading/skills/user/
-cp .env ~/.vibe-trading/.env 2>/dev/null || true
+# NOTE: we deliberately do NOT copy .env to ~/.vibe-trading/.env here.
+# That copy would be blank (the key isn't added until the next step), and the
+# runtime checks ~/.vibe-trading/.env FIRST — a blank copy there would shadow
+# the real key in this project's .env. Add your key below, then sync it.
 
 echo ""
-echo "✅ Done! To start trading research:"
-echo "   1. Edit .env and add at least one AI provider key"
-echo "   2. Run:  source .venv/bin/activate && vibe-trading"
+echo "✅ Done! Next steps:"
+echo "   1. Edit .env and paste your Anthropic API key into ANTHROPIC_API_KEY="
+echo "   2. Sync the key to the runtime:  cp .env ~/.vibe-trading/.env"
+echo "   3. Run:  source .venv/bin/activate && vibe-trading"
+echo ""
+echo "   (For the Telegram bot instead, see docs/TELEGRAM_SETUP.md)"
