@@ -32,7 +32,8 @@ STRICT RULES:
 DO THIS, IN ORDER:
 1. Read the account and current open positions (use the connector tools).
 2. For each open position: if it is up ${PROFIT_TARGET_PCT}% or more, close it (take profit). If it is down ${STOP_PCT}% or more, close it (stop loss). State the P&L for each in dollars and percent.
-3. Then decide whether there is ONE clean new entry worth taking from the watchlist right now. If yes, place a market buy sized at or under \$$MAX_ORDER_USD and say why. If nothing is clean, take no new trade — say 'no new trade' and why.
+3. NEWS CHECK — do it yourself, do not ask me. Before considering any new entry, use web_search / get_stock_news to scan for fresh catalysts on your watchlist, and ALWAYS investigate WHY behind any name that has moved sharply. If a big move is driven by bad fundamental news (recall, guidance cut, earnings miss, exec exit, regulatory/legal action), treat it as a falling knife and do NOT buy the bounce. Note the key headline(s) you found.
+4. Then decide whether there is ONE clean new entry worth taking from the watchlist right now, informed by that news. If yes, place a market buy sized at or under \$$MAX_ORDER_USD and say why (including the news read). If nothing is clean, take no new trade — say 'no new trade' and why.
 4. Finish with a short 'In plain terms:' summary: what you closed, what you opened, and what you're watching. Keep it under 250 words.
 
 If the market is closed, do not place new orders — just report positions and what you'd watch for at the open." | tee "$OUT_FILE"
