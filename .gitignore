@@ -17,3 +17,6 @@ cache/
 # OS noise
 .DS_Store
 Thumbs.db
+
+# Local agent config (may hold bot token)
+agent.json

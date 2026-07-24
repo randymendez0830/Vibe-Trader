@@ -138,11 +138,13 @@ vibe-trading setup   # one time
 vibe-trading dev     # then open http://localhost:5173
 ```
 
-**3. Telegram on your phone** — get research pushed to you:
+**3. Telegram on your phone** — chat with the agent and get a daily review pushed to you. Full step-by-step (create a bot, get your ID, start it): **[docs/TELEGRAM_SETUP.md](docs/TELEGRAM_SETUP.md)**. Quick version:
 ```bash
-vibe-trading channels   # follow the prompts; create a bot with @BotFather first
+cp config/agent.example.json ~/.vibe-trading/agent.json   # then fill in your bot token + user ID
+vibe-trading channels start                               # bot goes live; message it from your phone
+./morning_review.sh                                       # a market + paper-account review (schedule it via cron)
 ```
-Combine with the scheduler (`VIBE_TRADING_ENABLE_SCHEDULER=1` in `.env`) to get a recurring morning scan of your watchlist delivered automatically.
+Uses polling mode — no server or webhook needed.
 
 ### Letting it actually place trades (paper first!)
 

@@ -1,0 +1,15 @@
+{
+  "_comment": "Copy this file to ~/.vibe-trading/agent.json and fill in your Telegram bot token and your Telegram user ID. See docs/TELEGRAM_SETUP.md for step-by-step instructions.",
+  "channels": {
+    "send_progress": true,
+    "send_tool_hints": true,
+    "telegram": {
+      "enabled": true,
+      "token": "PASTE_YOUR_BOTFATHER_TOKEN_HERE",
+      "mode": "polling",
+      "allow_from": ["PASTE_YOUR_TELEGRAM_USER_ID_HERE"],
+      "streaming": true,
+      "react_emoji": "👀"
+    }
+  }
+}
