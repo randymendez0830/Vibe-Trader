@@ -22,7 +22,14 @@ STOP_PCT="3"                              # close a loser down this many %
 OUT_FILE="$(mktemp)"
 trap 'rm -f "$OUT_FILE"' EXIT
 
-vibe-trading run --no-rich -p "Autonomous paper-account management pass. You are trading a PAPER account only (fake money) through the selected Alpaca paper connector. Follow your options-desk discipline for reasoning, but trade STOCKS only in this pass.
+# Compute the REAL current Eastern time + market status and feed them to the
+# agent, so it stops hallucinating the time from stale data timestamps.
+NOW_ET=$(python -c 'from datetime import datetime; from zoneinfo import ZoneInfo; print(datetime.now(ZoneInfo("America/New_York")).strftime("%A %Y-%m-%d %I:%M %p ET"))' 2>/dev/null || echo "unknown")
+MKT_STATUS=$(python -c 'from datetime import datetime; from zoneinfo import ZoneInfo; n=datetime.now(ZoneInfo("America/New_York")); m=n.hour*60+n.minute; print("OPEN" if (n.weekday()<5 and 570<=m<960) else "CLOSED")' 2>/dev/null || echo "unknown")
+
+vibe-trading run --no-rich -p "CURRENT TIME: $NOW_ET. THE US STOCK MARKET IS $MKT_STATUS RIGHT NOW. Trust these two facts absolutely — do NOT infer the time or whether the market is open from quote timestamps or data staleness; that data is delayed and will mislead you. If the status above says OPEN, the market is open and you may place orders; if CLOSED, do not place new orders.
+
+Autonomous paper-account management pass. You are trading a PAPER account only (fake money) through the selected Alpaca paper connector. Follow your options-desk discipline for reasoning, but trade STOCKS only in this pass.
 
 STRICT RULES:
 - Paper account only. Never exceed \$$MAX_ORDER_USD on any single new position.

@@ -17,9 +17,10 @@ echo "Auto-schedule running. auto_manage runs every 30 min, Mon-Fri 10:00am-4:00
 echo "Leave this window open. Press Ctrl+C to stop."
 
 while true; do
-  dow=$(date +%u)                 # 1=Mon .. 7=Sun
-  hm=$((10#$(date +%H%M)))        # local time as HHMM (base-10 forced)
-  if [ "$dow" -le 5 ] && [ "$hm" -ge 1000 ] && [ "$hm" -le 1600 ]; then
+  # Use REAL US Eastern time (works regardless of the Mac's own timezone).
+  read -r dow mins < <(python3 -c 'from datetime import datetime; from zoneinfo import ZoneInfo; n=datetime.now(ZoneInfo("America/New_York")); print(n.weekday(), n.hour*60+n.minute)' 2>/dev/null || echo "9 0")
+  # dow: Mon=0..Sun=6 ; mins: minutes past ET midnight. 600=10:00, 960=16:00.
+  if [ "$dow" -le 4 ] && [ "$mins" -ge 600 ] && [ "$mins" -le 960 ]; then
     echo "[$(date '+%Y-%m-%d %H:%M')] running auto_manage pass..."
     ./auto_manage.sh || true
     sleep 1800                    # 30 minutes
