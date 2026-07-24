@@ -152,9 +152,15 @@ vibe-trading run -p "Backtest a 30-delta SPY iron condor entered weekly over the
 vibe-trading alpha list          # browse 462 pre-built strategies
 ```
 
+### The agent's brain
+
+Configured as **Claude Sonnet 4.5** (`LANGCHAIN_MODEL_NAME` in `.env`). It's the sweet spot for this project: strong enough for rigorous options reasoning, and about 5x cheaper than Opus so your API credits stretch much further — a typical research question costs a few cents.
+
+> Note: this version of Vibe-Trading sends a `temperature` setting that the very newest models (Opus 4.8, Sonnet 5) reject, which is why Sonnet 4.5 is the pinned default. It's verified working end-to-end.
+
 ### One-time requirement: API credits
 
-The agent's brain runs on the Anthropic API, which uses **prepaid credits — separate from any Claude.ai subscription**. Add credits at [console.anthropic.com → Plans & Billing](https://console.anthropic.com/settings/billing) ($5 minimum goes a long way; typical research questions cost a few cents each).
+The Anthropic API uses **prepaid credits — separate from any Claude.ai subscription**. Add them at [console.anthropic.com → Plans & Billing](https://console.anthropic.com/settings/billing) ($5 goes a long way at Sonnet pricing).
 
 ## Important disclaimers
 
