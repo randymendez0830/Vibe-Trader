@@ -38,8 +38,14 @@ DO THIS, IN ORDER:
 If the market is closed, do not place new orders — just report positions and what you'd watch for at the open." | tee "$OUT_FILE"
 
 # Send the summary to Telegram (best-effort; reads token + chat id from agent.json).
+# Uses `requests` (bundles its own CA certs via certifi) rather than urllib, so it
+# works on python.org macOS installs that haven't run "Install Certificates".
 python - "$OUT_FILE" <<'PY' || true
-import json, sys, pathlib, urllib.request, urllib.parse
+import json, sys, pathlib
+try:
+    import requests
+except Exception:
+    sys.exit(0)
 cfg = pathlib.Path.home() / ".vibe-trading" / "agent.json"
 try:
     tg = json.loads(cfg.read_text())["channels"]["telegram"]
@@ -47,9 +53,12 @@ try:
 except Exception:
     sys.exit(0)  # no Telegram configured — the printed/logged output is enough
 text = pathlib.Path(sys.argv[1]).read_text().strip()[-3500:] or "auto_manage: (no output)"
-data = urllib.parse.urlencode({"chat_id": chat_id, "text": "🤖 Auto-manage pass:\n\n" + text}).encode()
 try:
-    urllib.request.urlopen(f"https://api.telegram.org/bot{token}/sendMessage", data=data, timeout=20)
+    requests.post(
+        f"https://api.telegram.org/bot{token}/sendMessage",
+        data={"chat_id": chat_id, "text": "🤖 Auto-manage pass:\n\n" + text},
+        timeout=20,
+    )
 except Exception:
     pass
 PY
