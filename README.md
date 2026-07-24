@@ -152,6 +152,8 @@ touching real funds. Full step-by-step guide: **[docs/ALPACA_PAPER_SETUP.md](doc
 
 Quick note on the two platforms people ask about: **TradingView** isn't a broker (it's charts/alerts — the agent can't trade through it), and **Robinhood** has no paper account (connecting it = real money from day one). Alpaca Paper is the right place to start. Interactive Brokers and Tiger paper accounts also work if you prefer them.
 
+**Ready for real money later?** Once your Alpaca paper POC has earned your trust, see **[docs/REAL_MONEY_BROKERS.md](docs/REAL_MONEY_BROKERS.md)** — which brokers actually support live automated trading in this tool (short answer: graduate to Alpaca Live, since it's the same connector you already validated), the "mandate" safety gate that stops real trades from happening by accident, and a slow, evidence-based plan for going live.
+
 ### Things to try first
 
 ```bash
