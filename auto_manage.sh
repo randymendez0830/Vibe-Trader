@@ -62,7 +62,10 @@ for cut in ("\n--show", "\nRun ID", "\nRun dir", "\nStatus:", "\nElapsed"):
     i = summary.find(cut)
     if i != -1:
         summary = summary[:i]
-summary = summary.strip() or "auto_manage: (no summary)"
+# Strip Markdown so it reads cleanly on a phone (Telegram shows raw ** ## | ` otherwise).
+import re
+summary = re.sub(r"[*#`>|]", "", summary)
+summary = re.sub(r"\n{3,}", "\n\n", summary).strip()[:3500] or "auto_manage: (no summary)"
 try:
     requests.post(
         f"https://api.telegram.org/bot{token}/sendMessage",
