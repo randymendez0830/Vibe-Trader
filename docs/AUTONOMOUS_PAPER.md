@@ -41,21 +41,30 @@ print("OPEN ORDERS:", sdk.get_open_orders())
 EOF
 ```
 
-### Schedule it during market hours
+### Schedule it during market hours (the easy Mac way)
 
-US market hours are 9:30am–4:00pm **Eastern**, weekdays. Run `crontab -e` and add
-a line — this runs every 30 minutes in that window. **Adjust the hours to your own
-timezone's equivalent of 9:30–16:00 ET.** (cron uses your Mac's local time.)
+The repo includes **`schedule.sh`**, which runs `auto_manage.sh` every 30 minutes
+during US market hours (Mon–Fri, 9:30am–4:00pm ET) and does nothing overnight.
+This avoids the macOS cron permission headaches. Launch it once and leave the
+window open:
 
+```bash
+caffeinate -i ./schedule.sh
+```
+
+`caffeinate -i` keeps your Mac awake while it runs. Keep the Telegram bot running
+in its own window so the summaries reach your phone. **Press Ctrl+C to stop.**
+
+> `schedule.sh` assumes your Mac's clock is US Eastern. If not, edit the `930` /
+> `1600` values inside it to your local equivalent of 9:30am / 4:00pm Eastern.
+
+**Prefer real cron instead?** `crontab -e` and add (fix the path with `pwd`):
 ```
 */30 9-16 * * 1-5 /Users/YOUR_NAME/Desktop/Vibe-Trader/auto_manage.sh >> ~/vibe-auto.log 2>&1
 ```
-
-Replace `/Users/YOUR_NAME/...` with your real path (run `pwd` in the project to get
-it). Keep the Telegram bot running so the summaries reach your phone, and keep the
-Mac awake during market hours. Peek at what it's done with `cat ~/vibe-auto.log`.
-
-**To stop the schedule:** `crontab -e` and delete that line.
+On modern macOS, cron may need Full Disk Access (System Settings → Privacy &
+Security) to run a script under `~/Desktop`. The `schedule.sh` loop above sidesteps
+that entirely, which is why it's the recommended path.
 
 ---
 

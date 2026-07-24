@@ -13,10 +13,10 @@ cd "$(dirname "$0")"
 source .venv/bin/activate
 
 # ---- your bounded rules (edit these) ----
-WATCHLIST="SPY, QQQ, AAPL, NVDA, MSFT"   # stocks it may consider
-MAX_ORDER_USD="500"                       # biggest single new position, in $
-PROFIT_TARGET_PCT="10"                    # close a winner up this many %
-STOP_PCT="6"                              # close a loser down this many %
+WATCHLIST="SPY, QQQ, AAPL, NVDA, MSFT, TSLA, AMD, GOOGL, AMZN, META"  # stocks it may consider
+MAX_ORDER_USD="2000"                      # biggest single new position, in $
+PROFIT_TARGET_PCT="4"                     # close a winner up this many %
+STOP_PCT="3"                              # close a loser down this many %
 # -----------------------------------------
 
 OUT_FILE="$(mktemp)"
