@@ -52,11 +52,20 @@ try:
     token = tg["token"]; chat_id = tg["allow_from"][0]
 except Exception:
     sys.exit(0)  # no Telegram configured — the printed/logged output is enough
-text = pathlib.Path(sys.argv[1]).read_text().strip()[-3500:] or "auto_manage: (no output)"
+raw = pathlib.Path(sys.argv[1]).read_text()
+# Send just the clean "In plain terms" summary, not the whole terminal dump.
+marker = raw.lower().rfind("in plain terms")
+summary = raw[marker:] if marker != -1 else raw[-3000:]
+# Trim trailing CLI noise that follows the summary.
+for cut in ("\n--show", "\nRun ID", "\nRun dir", "\nStatus:", "\nElapsed"):
+    i = summary.find(cut)
+    if i != -1:
+        summary = summary[:i]
+summary = summary.strip() or "auto_manage: (no summary)"
 try:
     requests.post(
         f"https://api.telegram.org/bot{token}/sendMessage",
-        data={"chat_id": chat_id, "text": "🤖 Auto-manage pass:\n\n" + text},
+        data={"chat_id": chat_id, "text": "🤖 Auto-manage pass\n\n" + summary},
         timeout=20,
     )
 except Exception:
