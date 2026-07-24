@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Scheduled paper-account auto-manage pass.
 # Each run, the agent reviews your open PAPER positions, exits any that hit a
-# profit target or stop, and may open ONE small new stock position. Every action
-# is reported (and reaches your phone if the Telegram bot is running).
+# profit target or stop, and may open ONE small new stock position. The summary
+# is printed AND sent to your Telegram (read from ~/.vibe-trading/agent.json).
 #
 # PAPER ONLY. This uses the alpaca-paper-trade connector — fake money, no real
 # funds can be touched. Run by hand any time:  ./auto_manage.sh
@@ -19,6 +19,9 @@ PROFIT_TARGET_PCT="10"                    # close a winner up this many %
 STOP_PCT="6"                              # close a loser down this many %
 # -----------------------------------------
 
+OUT_FILE="$(mktemp)"
+trap 'rm -f "$OUT_FILE"' EXIT
+
 vibe-trading run --no-rich -p "Autonomous paper-account management pass. You are trading a PAPER account only (fake money) through the selected Alpaca paper connector. Follow your options-desk discipline for reasoning, but trade STOCKS only in this pass.
 
 STRICT RULES:
@@ -32,4 +35,21 @@ DO THIS, IN ORDER:
 3. Then decide whether there is ONE clean new entry worth taking from the watchlist right now. If yes, place a market buy sized at or under \$$MAX_ORDER_USD and say why. If nothing is clean, take no new trade — say 'no new trade' and why.
 4. Finish with a short 'In plain terms:' summary: what you closed, what you opened, and what you're watching. Keep it under 250 words.
 
-If the market is closed, do not place new orders — just report positions and what you'd watch for at the open."
+If the market is closed, do not place new orders — just report positions and what you'd watch for at the open." | tee "$OUT_FILE"
+
+# Send the summary to Telegram (best-effort; reads token + chat id from agent.json).
+python - "$OUT_FILE" <<'PY' || true
+import json, sys, pathlib, urllib.request, urllib.parse
+cfg = pathlib.Path.home() / ".vibe-trading" / "agent.json"
+try:
+    tg = json.loads(cfg.read_text())["channels"]["telegram"]
+    token = tg["token"]; chat_id = tg["allow_from"][0]
+except Exception:
+    sys.exit(0)  # no Telegram configured — the printed/logged output is enough
+text = pathlib.Path(sys.argv[1]).read_text().strip()[-3500:] or "auto_manage: (no output)"
+data = urllib.parse.urlencode({"chat_id": chat_id, "text": "🤖 Auto-manage pass:\n\n" + text}).encode()
+try:
+    urllib.request.urlopen(f"https://api.telegram.org/bot{token}/sendMessage", data=data, timeout=20)
+except Exception:
+    pass
+PY
