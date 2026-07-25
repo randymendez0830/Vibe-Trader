@@ -27,7 +27,12 @@ import sys
 from statistics import mean, pstdev
 
 WATCHLIST = ["SPY", "QQQ", "AAPL", "NVDA", "MSFT", "TSLA", "AMD", "GOOGL", "AMZN", "META"]
-POSITION_USD = 2000.0
+# Position size as a FRACTION OF CURRENT EQUITY (compounding), so the result is
+# directly comparable to buy-and-hold, which is 100% invested. With the old
+# fixed $2,000-of-$100,000 sizing, only 2% of capital ever worked and every
+# strategy lost to the benchmark by construction -- an unfair test.
+# 1.0 = go "all in" on one position at a time. Lower it to trade smaller.
+POSITION_PCT = 1.0
 SLIPPAGE = 0.0005          # 0.05% per side
 YEARS = 5                  # more history = more reliable
 START_EQUITY = 100_000.0
@@ -245,7 +250,10 @@ def simulate(history, sig_fn, exit_cfg, date_from=None, date_to=None):
             if i + 1 < len(bars):
                 entry = bars[i + 1][1] * (1 + SLIPPAGE)
                 a = atr_at(bars, i) or (entry * 0.02)
-                pos = {"t": t, "idx": i, "entry": entry, "sh": POSITION_USD / entry,
+                # Size as a fraction of CURRENT equity so gains compound, making
+                # the result comparable to a 100%-invested buy-and-hold benchmark.
+                stake = equity * POSITION_PCT
+                pos = {"t": t, "idx": i, "entry": entry, "sh": stake / entry,
                        "days": 0, "atr": a, "peak": entry}
         peak = max(peak, equity)
         if peak > 0:
@@ -341,6 +349,12 @@ def main():
     print("- DO NOT tune parameters until something looks good. That is overfitting,")
     print("  and it is the reason most backtested systems lose money live.")
     print("- Beating SPY on paper for 2.5 years is still not proof of an edge.")
+    print(f"- LONG-ONLY: every strategy here buys. No shorts, no puts. In a market")
+    print("  that rose +79% over this window, long-only flatters results; a bear")
+    print("  market would look very different.")
+    print(f"- Sizing is {POSITION_PCT:.0%} of equity per trade, one position at a time,")
+    print("  compounding. That makes it comparable to 100%-invested buy-and-hold,")
+    print("  but it is also concentrated risk - all eggs in one stock at a time.")
 
 
 if __name__ == "__main__":
