@@ -279,14 +279,28 @@ def spy_bh(history, date_from=None, date_to=None):
 
 
 def grade(ins, oos, bench_in, bench_out):
-    """Confidence grade. Punishes low trade counts and in-sample-only wins."""
+    """Confidence grade. Punishes low trade counts, in-sample-only wins, and
+    -- critically -- INSTABILITY: a strategy that loses badly in one half and
+    wins hugely in the other has no reliable edge, it has regime luck. That
+    pattern is the classic way a backtest fools you, so it is graded UNSTABLE
+    no matter how big the winning half looks."""
     beat_in = ins["ret"] > bench_in
     beat_out = oos["ret"] > bench_out
     enough = oos["n"] >= MIN_TRADES_CREDIBLE and ins["n"] >= MIN_TRADES_CREDIBLE
-    if beat_in and beat_out and enough and oos["pf"] > 1.2:
+
+    # Sign flip between halves = unreliable, regardless of the headline return.
+    if enough and ins["ret"] < 0 < oos["ret"]:
+        return "UNSTABLE (lost in 1st half)"
+    if enough and oos["ret"] < 0 < ins["ret"]:
+        return "UNSTABLE (lost in 2nd half)"
+    # A win margin thinner than 3 percentage points over the benchmark is a tie.
+    if beat_out and abs(oos["ret"] - bench_out) < 3.0:
+        return "NONE (tied with SPY)"
+
+    if beat_in and beat_out and enough and ins["pf"] > 1.2 and oos["pf"] > 1.2:
         return "MODERATE"          # deliberately the ceiling - see the caveats
     if beat_out and enough:
-        return "LOW-MODERATE"
+        return "LOW"
     if beat_out and not enough:
         return "LOW (too few trades)"
     if beat_in and not beat_out:
@@ -307,7 +321,7 @@ def main():
     print(f"SPY buy & hold: full {bench_full:+.1f}% | "
           f"1st half {bench_in:+.1f}% | 2nd half {bench_out:+.1f}%")
     print(f"\n{'Strategy':<34}{'Exit':<16}{'Trades':>7}{'Win%':>6}"
-          f"{'PF':>6}{'MaxDD':>7}{'OOS ret':>9}  Confidence")
+          f"{'PF':>6}{'MaxDD':>7}{'IS ret':>9}{'OOS ret':>9}  Confidence")
     print("-" * 78)
 
     rows = []
@@ -319,12 +333,12 @@ def main():
             rows.append((sname, ecfg[0], ins, oos, g))
             print(f"{sname[:33]:<34}{ecfg[0][:15]:<16}{oos['n']:>7}"
                   f"{oos['win']:>6.0f}{oos['pf']:>6.2f}{oos['dd']:>7.1f}"
-                  f"{oos['ret']:>+9.2f}  {g}")
+                  f"{ins['ret']:>+9.2f}{oos['ret']:>+9.2f}  {g}")
 
-    survivors = [r for r in rows if r[4].startswith(("MODERATE", "LOW-MODERATE"))]
+    survivors = [r for r in rows if r[4] in ("MODERATE", "LOW")]
     print("\n" + "=" * 78)
-    print(f"SURVIVORS (beat SPY out-of-sample with enough trades): {len(survivors)} "
-          f"of {len(rows)} tested")
+    print(f"SURVIVORS (beat SPY out-of-sample, enough trades, NOT unstable): "
+          f"{len(survivors)} of {len(rows)} tested")
     print("=" * 78)
     if survivors:
         for s, e, ins, oos, g in sorted(survivors, key=lambda r: -r[3]["ret"]):
