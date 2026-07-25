@@ -1,0 +1,36 @@
+{
+  "_comment": "Copy to ~/.vibe-trading/watch_plans.json. The watchdog reads this every run, so you can edit it live — no restart needed. 'positions' sets per-holding stops/targets (overriding the defaults in watchdog.py). 'alerts' watches tickers you do NOT own yet and texts you when a price is crossed.",
+
+  "positions": [
+    {
+      "symbol": "AMD",
+      "stop": 530,
+      "target": 560,
+      "note": "exit below 530, no hoping"
+    },
+    {
+      "symbol": "AAPL",
+      "stop_pct": -5,
+      "target_pct": 10,
+      "note": "percent-based instead of fixed prices"
+    }
+  ],
+
+  "alerts": [
+    {
+      "symbol": "CDNS",
+      "below": 320,
+      "note": "earnings dip zone 315-320 — checklist still vetoes new entries within 2 days of earnings, so treat this as information, not a signal"
+    },
+    {
+      "symbol": "CDNS",
+      "above": 330,
+      "note": "gapped up through resistance — the dip-buy thesis is dead, do not chase"
+    },
+    {
+      "symbol": "NVDA",
+      "above": 215,
+      "note": "breakout level from the backtest-favoured gap-and-hold setup"
+    }
+  ]
+}
