@@ -1,18 +1,27 @@
 {
-  "_comment": "Copy to ~/.vibe-trading/watch_plans.json. The watchdog reads this every run, so you can edit it live — no restart needed. 'positions' sets per-holding stops/targets (overriding the defaults in watchdog.py). 'alerts' watches tickers you do NOT own yet and texts you when a price is crossed.",
+  "_comment": "Copy to ~/.vibe-trading/watch_plans.json. The watchdog re-reads this every run, so you can edit it live with no restart. 'positions' sets per-holding stops/targets (overriding watchdog.py defaults). 'alerts' watches tickers you do NOT own and texts you when a price is crossed.",
+
+  "_warning_stale_prices": "PREFER stop_pct/target_pct OVER FIXED PRICES. A hardcoded stop goes stale the moment your entry price changes: a stop of 530 against an entry of 530.85 is a 0.16% stop, which any normal wiggle triggers instantly. Percentages re-anchor to your actual fill automatically. Use a fixed price only when it marks a real structural level (a support shelf, a Fibonacci retracement, the prior day's low) AND you have checked it against your current entry.",
 
   "positions": [
     {
       "symbol": "AMD",
-      "stop": 530,
-      "target": 560,
-      "note": "exit below 530, no hoping"
+      "stop_pct": -5,
+      "target_pct": 10,
+      "note": "percent-based, so it re-anchors to whatever the real fill was"
     },
     {
       "symbol": "AAPL",
       "stop_pct": -5,
       "target_pct": 10,
-      "note": "percent-based instead of fixed prices"
+      "note": "backtesting favoured wide exits (10/-5) over tight (4/-3)"
+    },
+    {
+      "_example_fixed_price": "only when it is a genuine structural level",
+      "symbol": "NVDA",
+      "stop": 206,
+      "target": 225,
+      "note": "206 = prior swing low; 225 = next resistance. Re-check after any new fill."
     }
   ],
 
@@ -20,17 +29,17 @@
     {
       "symbol": "CDNS",
       "below": 320,
-      "note": "earnings dip zone 315-320 — checklist still vetoes new entries within 2 days of earnings, so treat this as information, not a signal"
+      "note": "earnings dip zone 315-320. Information only: the checklist still vetoes new entries within 2 days of earnings."
     },
     {
       "symbol": "CDNS",
       "above": 330,
-      "note": "gapped up through resistance — the dip-buy thesis is dead, do not chase"
+      "note": "gapped through resistance, dip-buy thesis dead, do not chase"
     },
     {
       "symbol": "NVDA",
       "above": 215,
-      "note": "breakout level from the backtest-favoured gap-and-hold setup"
+      "note": "breakout level for the gap-and-hold setup that survived backtesting"
     }
   ]
 }
