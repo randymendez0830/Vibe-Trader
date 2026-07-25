@@ -28,6 +28,16 @@ source .venv/bin/activate
 AUTO_EXIT=""
 case " $* " in *" --auto-exit "*) AUTO_EXIT="--auto-exit" ;; esac
 
+# Which LLM briefings to run. The watchdog is free (no LLM); briefings are the
+# ONLY thing that costs Claude credits, so this is your cost dial.
+#   all six  ~$6-19/mo | three ~$3-9/mo | two ~$2-6/mo
+# Override per run:   VIBE_BRIEFINGS="premarket,close" ./alerts.sh
+BRIEFINGS="${VIBE_BRIEFINGS:-premarket,open,entry,midday,powerhour,close}"
+
+enabled() {  # enabled <slot> -> 0 if that briefing should run
+  case ",${BRIEFINGS}," in *",$1,"*) return 0 ;; *) return 1 ;; esac
+}
+
 STAMP_DIR="$HOME/.vibe-trading/checkin_stamps"
 mkdir -p "$STAMP_DIR"
 
@@ -69,7 +79,8 @@ if [ -n "$AUTO_EXIT" ]; then
 else
   echo "  Watchdog : every 3 min while open  (alert only -- add --auto-exit to close)"
 fi
-echo "  Briefings: 9:00 premarket | 9:32 open | 10:00 entry | 12:00 midday | 15:00 power hour | 15:45 close"
+echo "  Briefings: $BRIEFINGS"
+echo "             (set VIBE_BRIEFINGS to trim cost, e.g. VIBE_BRIEFINGS=premarket,close)"
 echo "Leave this window open. Ctrl+C to stop."
 
 while true; do
@@ -83,17 +94,17 @@ while true; do
 
   if [ "$DOW" -le 5 ]; then
     if [ "$hm" -ge 900 ] && [ "$hm" -lt 930 ]; then
-      briefing premarket "PRE-MARKET BRIEFING. Check overnight and pre-market news for my watchlist and any open positions, plus any earnings reported this morning. Note pre-market gaps and the specific levels you'll watch at the open. The market is closed, so no trades." "Pre-market briefing"
+      enabled premarket && briefing premarket "PRE-MARKET BRIEFING. Check overnight and pre-market news for my watchlist and any open positions, plus any earnings reported this morning. Note pre-market gaps and the specific levels you'll watch at the open. The market is closed, so no trades." "Pre-market briefing"
     elif [ "$hm" -ge 932 ] && [ "$hm" -lt 945 ]; then
-      briefing open "OPENING BELL REACTION. The market just opened. Report how my open positions and watchlist opened versus yesterday's close: gap up, gap down or flat, and anything moving hard. Per the checklist, do NOT enter new positions in the first 30 minutes -- report only." "Opening bell"
+      enabled open && briefing open "OPENING BELL REACTION. The market just opened. Report how my open positions and watchlist opened versus yesterday's close: gap up, gap down or flat, and anything moving hard. Per the checklist, do NOT enter new positions in the first 30 minutes -- report only." "Opening bell"
     elif [ "$hm" -ge 1000 ] && [ "$hm" -lt 1015 ]; then
-      briefing entry "ENTRY WINDOW. The opening range is set and the no-entry window has passed. Load the pre-trade-checklist skill and run it fully on the best candidate. Report the verdict: TRADE / WAIT FOR <specific trigger> / NO TRADE. NO TRADE is a perfectly good answer." "Entry window"
+      enabled entry && briefing entry "ENTRY WINDOW. The opening range is set and the no-entry window has passed. Load the pre-trade-checklist skill and run it fully on the best candidate. Report the verdict: TRADE / WAIT FOR <specific trigger> / NO TRADE. NO TRADE is a perfectly good answer." "Entry window"
     elif [ "$hm" -ge 1200 ] && [ "$hm" -lt 1215 ]; then
-      briefing midday "MIDDAY CHECK. Report open positions with P&L in dollars and percent, whether any is near its stop or target, and whether this morning's thesis still holds. Midday is chop -- be skeptical of new entries." "Midday check"
+      enabled midday && briefing midday "MIDDAY CHECK. Report open positions with P&L in dollars and percent, whether any is near its stop or target, and whether this morning's thesis still holds. Midday is chop -- be skeptical of new entries." "Midday check"
     elif [ "$hm" -ge 1500 ] && [ "$hm" -lt 1515 ]; then
-      briefing powerhour "POWER HOUR. Final hour. Report positions and P&L, and say clearly which should be closed before the bell versus held overnight, with the reason. Flag any option nearing expiry." "Power hour"
+      enabled powerhour && briefing powerhour "POWER HOUR. Final hour. Report positions and P&L, and say clearly which should be closed before the bell versus held overnight, with the reason. Flag any option nearing expiry." "Power hour"
     elif [ "$hm" -ge 1545 ] && [ "$hm" -lt 1600 ]; then
-      briefing close "END OF DAY. Summarize today: trades taken, P&L in dollars and percent, what worked and what did not. Note anything expiring or needing attention tomorrow. Write one honest lesson to memory." "Market close"
+      enabled close && briefing close "END OF DAY. Summarize today: trades taken, P&L in dollars and percent, what worked and what did not. Note anything expiring or needing attention tomorrow. Write one honest lesson to memory." "Market close"
     fi
 
     # Watchdog: cheap and fast, runs every loop while the market is open.
