@@ -244,6 +244,17 @@ def main() -> None:
 
     plans = load_json(PLANS_FILE, {})
     state = load_json(STATE_FILE, {})
+
+    # No plans file means no price alerts are armed at all -- a ticker you were
+    # told about (CDNS at 320) is simply never checked. That used to fail
+    # silently, which is indistinguishable from "watching, nothing triggered".
+    if not PLANS_FILE.exists():
+        key = f"noplans:{et_now().date()}"
+        if not state.get(key):
+            print(f"NOTE: {PLANS_FILE} not found — no price alerts are armed. "
+                  f"Only open positions are being watched. To arm alerts:\n"
+                  f"  cp config/watch_plans.example.json {PLANS_FILE}")
+            state[key] = True
     # Drop yesterday's memory so alerts can fire fresh each day.
     today = str(et_now().date())
     state = {k: v for k, v in state.items() if today in k}

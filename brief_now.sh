@@ -16,6 +16,10 @@ source .venv/bin/activate
 now_et=$(python3 -c 'from datetime import datetime;from zoneinfo import ZoneInfo;print(datetime.now(ZoneInfo("America/New_York")).strftime("%A %Y-%m-%d %I:%M %p ET"))')
 mkt=$(python3 -c 'from datetime import datetime;from zoneinfo import ZoneInfo;n=datetime.now(ZoneInfo("America/New_York"));m=n.hour*60+n.minute;print("OPEN" if (n.weekday()<5 and 570<=m<960) else "CLOSED")')
 
+# Must match alerts.sh, or an on-demand briefing looks at different names than
+# the scheduled ones. Override per run: VIBE_WATCHLIST="CDNS, NVDA" ./brief_now.sh
+WATCHLIST="${VIBE_WATCHLIST:-SPY, QQQ, AAPL, NVDA, MSFT, TSLA, AMD, GOOGL, AMZN, META}"
+
 ARG="${1:-status}"
 case "$ARG" in
   status)
@@ -40,6 +44,8 @@ ACCT=$(python portfolio.py snapshot 2>/dev/null)
 vibe-trading run --no-rich -p "CURRENT TIME: $now_et. US MARKET IS $mkt. Trust these two facts absolutely; do not infer the time or market state from data timestamps.
 
 $ACCT
+
+MY WATCHLIST is exactly: $WATCHLIST. When a briefing says 'my watchlist', it means these names and only these. Do not substitute your own list, and if you flag a ticker outside it, say plainly that it is NOT being monitored and must be added to VIBE_WATCHLIST to be watched again.
 
 $TASK
 

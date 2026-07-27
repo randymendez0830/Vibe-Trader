@@ -34,6 +34,13 @@ case " $* " in *" --auto-exit "*) AUTO_EXIT="--auto-exit" ;; esac
 # Override per run:   VIBE_BRIEFINGS="premarket,close" ./alerts.sh
 BRIEFINGS="${VIBE_BRIEFINGS:-premarket,open,entry,midday,powerhour,close}"
 
+# The names the briefings look at. This USED to be undefined -- the prompts said
+# "my watchlist" and never said what that was, so the model invented a different
+# list every run. A ticker mentioned once (CDNS) would silently never be looked
+# at again. Add names here, or override for one run:
+#   VIBE_WATCHLIST="SPY, NVDA, CDNS" ./start.sh
+WATCHLIST="${VIBE_WATCHLIST:-SPY, QQQ, AAPL, NVDA, MSFT, TSLA, AMD, GOOGL, AMZN, META}"
+
 enabled() {  # enabled <slot> -> 0 if that briefing should run
   case ",${BRIEFINGS}," in *",$1,"*) return 0 ;; *) return 1 ;; esac
 }
@@ -66,6 +73,8 @@ briefing() {
   vibe-trading run --no-rich -p "CURRENT TIME: $now_et. US MARKET IS $mkt. Trust these two facts absolutely; do not infer the time or market state from data timestamps.
 
 $acct
+
+MY WATCHLIST is exactly: $WATCHLIST. When a briefing says 'my watchlist', it means these names and only these. Do not substitute your own list, and if you flag a ticker outside it, say plainly that it is NOT being monitored and must be added to VIBE_WATCHLIST to be watched again.
 
 $prompt
 
