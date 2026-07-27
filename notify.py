@@ -47,27 +47,84 @@ def telegram_send(text: str) -> int:
         return 1
 
 
+# Lines the CLI prints around the actual answer. Dropping these leaves the
+# real reply, so we never have to blind-slice the tail (which cut messages
+# mid-word: "n Middle East ceasefire hopes...").
+_NOISE = re.compile(
+    r"^\s*(?:"
+    r"Preflight Check|Prompt:|Status:|Elapsed|Run ID|Run dir|--show|"
+    r"\d+/\d+ services ready|"
+    r"(?:OK|N/A|FAIL|WARN)\s*[│|]|"                 # preflight table rows
+    r"[│┃┏┡┗━┓┛─╇╈]|"                                # table borders
+    r"-\s+\w[\w.]*\s+.*?\bOK\s+[\d.]+s|"             # "- trading_account ... OK 0.3s"
+    r"OK\s+[\d.]+s\s*$|"                             # bare "OK 0.3s"
+    r"\w+ is unavailable, falling back|"
+    r"请设置tushare"
+    r")",
+    re.IGNORECASE,
+)
+
+
+# The agent's thinking-out-loud openers ("I'll check the account first."), which
+# are meaningless in a text message.
+_PREAMBLE = re.compile(
+    r"^\s*(?:I'?ll\b|I will\b|Let me\b|Let's\b|First,|Now (?:let|I)\b|"
+    r"Checking\b|Looking\b|Starting\b|I'?m going to\b)",
+    re.IGNORECASE,
+)
+
+
+def _strip_noise(text: str) -> str:
+    lines = [ln for ln in text.splitlines() if not _NOISE.match(ln)]
+    # Drop leading preamble lines, but never eat the whole message.
+    while lines and (not lines[0].strip() or _PREAMBLE.match(lines[0])):
+        if len([x for x in lines[1:] if x.strip()]) < 2:
+            break
+        lines.pop(0)
+    return "\n".join(lines)
+
+
+def _tail_at_boundary(text: str, limit: int) -> str:
+    """Take the last `limit` chars but start at a clean paragraph/sentence."""
+    if len(text) <= limit:
+        return text
+    tail = text[-limit:]
+    for sep in ("\n\n", "\n", ". "):
+        i = tail.find(sep)
+        if i != -1 and i < limit // 2:          # don't throw away most of it
+            return tail[i + len(sep):]
+    return tail
+
+
 def summarize(path: str) -> str:
-    """Pull the human-facing summary out of a CLI run and make it phone-safe."""
+    """Pull the human-facing reply out of a CLI run and make it phone-safe."""
     try:
         raw = pathlib.Path(path).read_text(errors="replace")
     except OSError:
         return ""
-    low = raw.lower()
-    for marker in ("in plain terms", "bottom line", "verdict:", "summary:"):
-        i = low.rfind(marker)
-        if i != -1:
-            raw = raw[i:]
-            break
-    else:
-        raw = raw[-1600:]
-    for cut in ("\n--show", "\nRun ID", "\nRun dir", "\nStatus:", "\nElapsed"):
+
+    # 1. Cut everything after the trailing CLI footer.
+    for cut in ("\n--show ", "\nRun ID", "\nRun dir", "\nStatus:", "\nElapsed"):
         j = raw.find(cut)
         if j != -1:
             raw = raw[:j]
-    raw = re.sub(r"[*#`>|]", "", raw)          # strip markdown for plain text
-    raw = re.sub(r"\n{3,}", "\n\n", raw)
-    return raw.strip()[:MAX_CHARS]
+
+    # 2. Prefer an explicit marker the prompt asked for.
+    low = raw.lower()
+    for marker in ("briefing:", "in plain terms", "bottom line", "verdict:", "summary:"):
+        i = low.rfind(marker)
+        if i != -1:
+            raw = raw[i + len(marker):] if marker == "briefing:" else raw[i:]
+            break
+    else:
+        # 3. No marker: drop CLI scaffolding, keep the whole answer.
+        raw = _strip_noise(raw)
+
+    raw = re.sub(r"[*#`>|]", "", raw)            # strip markdown for plain text
+    raw = re.sub(r"\n{3,}", "\n\n", raw).strip()
+
+    # 4. Only if still too long, trim at a sentence/paragraph boundary.
+    return _tail_at_boundary(raw, MAX_CHARS).strip()
 
 
 def main() -> int:

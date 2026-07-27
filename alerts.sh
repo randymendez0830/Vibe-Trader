@@ -62,7 +62,9 @@ briefing() {
 
 $prompt
 
-RULES: Read positions, P&L and orders from the Alpaca connector -- never from memory. Get current prices via get_market_data with source=\"finnhub\" (real time); Alpaca quotes are delayed. Keep the whole reply under 900 characters, plain text only, no markdown tables, headers or asterisks -- it is going to a phone. Lead with the single most important thing. Do NOT promise future alerts, pings or check-ins." >"$out" 2>&1 || true
+RULES: Read positions, P&L and orders from the Alpaca connector -- never from memory. Get current prices via get_market_data with source=\"finnhub\" (real time); Alpaca quotes are delayed. Keep the whole reply under 900 characters, plain text only, no markdown tables, headers or asterisks -- it is going to a phone. Lead with the single most important thing. Do NOT promise future alerts, pings or check-ins.
+
+FORMAT: after any analysis, output your final phone message on its own, introduced by a line containing exactly BRIEFING: and nothing else. Everything after that line is what gets texted, so make it complete and self-contained -- do not start mid-thought, and do not reference the analysis above it." >"$out" 2>&1 || true
 
   summary=$(python notify.py summarize "$out")
   if [ -n "$summary" ]; then
