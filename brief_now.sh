@@ -31,28 +31,38 @@ esac
 
 echo "Running briefing ($ARG)... this takes ~30-60s."
 OUT=$(mktemp)
-trap 'rm -f "$OUT"' EXIT
+SUMF=$(mktemp)
+trap 'rm -f "$OUT" "$SUMF"' EXIT
+
+# Ground truth, read in plain Python before the model runs (see portfolio.py).
+ACCT=$(python portfolio.py snapshot 2>/dev/null)
 
 vibe-trading run --no-rich -p "CURRENT TIME: $now_et. US MARKET IS $mkt. Trust these two facts absolutely; do not infer the time or market state from data timestamps.
 
+$ACCT
+
 $TASK
 
-RULES: Read positions, P&L and orders from the Alpaca connector -- never from memory. Get current prices via get_market_data with source=\"finnhub\" (real time); Alpaca quotes are delayed. Keep the whole reply under 900 characters, plain text only, no markdown tables, headers or asterisks -- it is going to a phone. Lead with the single most important thing. Do NOT promise future alerts, pings or check-ins.
+RULES: The account snapshot above is authoritative for positions, P&L, cash and orders -- use it and never contradict it from memory. Get current prices via get_market_data with source=\"finnhub\" (real time); Alpaca quotes are delayed. Keep the whole reply under 900 characters, plain text only, no markdown tables, headers or asterisks -- it is going to a phone. Lead with the single most important thing. Do NOT promise future alerts, pings or check-ins.
 
 FORMAT: after any analysis, output your final phone message on its own, introduced by a line containing exactly BRIEFING: and nothing else. Everything after that line is what gets texted, so make it complete and self-contained -- do not start mid-thought, and do not reference the analysis above it." >"$OUT" 2>&1 || true
 
-SUMMARY=$(python notify.py summarize "$OUT")
+python notify.py summarize "$OUT" >"$SUMF"
+SUMMARY=$(cat "$SUMF")
 if [ -z "$SUMMARY" ]; then
   echo "No summary produced. Last lines of raw output:"
   tail -n 20 "$OUT"
   exit 1
 fi
+FOOTER=$(python portfolio.py footer "$SUMF" 2>/dev/null)
 
 echo "----- what will be texted -----"
-printf '%s\n' "$SUMMARY"
+printf '%s\n\n%s\n' "$SUMMARY" "$FOOTER"
 echo "-------------------------------"
 if python notify.py send "$LABEL
-$SUMMARY"; then
+$SUMMARY
+
+$FOOTER"; then
   echo "Sent to Telegram."
 else
   echo "Telegram send failed (see error above)."

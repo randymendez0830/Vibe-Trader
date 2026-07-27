@@ -55,23 +55,36 @@ briefing() {
 
   echo "[$(date '+%H:%M')] briefing: $slot"
   out=$(mktemp)
+  sumf=$(mktemp)
   now_et=$(et_pretty)
   mkt=$(et_mkt)
+  # Read the account in plain Python and paste it into the prompt. Telling the
+  # model to "look it up" is not enough -- it once reported "no open positions"
+  # while two were live. Injected facts cannot be forgotten.
+  acct=$(python portfolio.py snapshot 2>/dev/null)
 
   vibe-trading run --no-rich -p "CURRENT TIME: $now_et. US MARKET IS $mkt. Trust these two facts absolutely; do not infer the time or market state from data timestamps.
 
+$acct
+
 $prompt
 
-RULES: Read positions, P&L and orders from the Alpaca connector -- never from memory. Get current prices via get_market_data with source=\"finnhub\" (real time); Alpaca quotes are delayed. Keep the whole reply under 900 characters, plain text only, no markdown tables, headers or asterisks -- it is going to a phone. Lead with the single most important thing. Do NOT promise future alerts, pings or check-ins.
+RULES: The account snapshot above is authoritative for positions, P&L, cash and orders -- use it and never contradict it from memory. Get current prices via get_market_data with source=\"finnhub\" (real time); Alpaca quotes are delayed. Keep the whole reply under 900 characters, plain text only, no markdown tables, headers or asterisks -- it is going to a phone. Lead with the single most important thing. Do NOT promise future alerts, pings or check-ins.
 
 FORMAT: after any analysis, output your final phone message on its own, introduced by a line containing exactly BRIEFING: and nothing else. Everything after that line is what gets texted, so make it complete and self-contained -- do not start mid-thought, and do not reference the analysis above it." >"$out" 2>&1 || true
 
-  summary=$(python notify.py summarize "$out")
+  python notify.py summarize "$out" >"$sumf"
+  summary=$(cat "$sumf")
   if [ -n "$summary" ]; then
+    # Real numbers ride along in the message itself, and flag any claim of
+    # being flat that the account contradicts.
+    footer=$(python portfolio.py footer "$sumf" 2>/dev/null)
     python notify.py send "$label
-$summary" || true
+$summary
+
+$footer" || true
   fi
-  rm -f "$out"
+  rm -f "$out" "$sumf"
   touch "$stamp"
 }
 

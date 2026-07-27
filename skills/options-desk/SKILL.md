@@ -213,6 +213,22 @@ is worse than useless — it invites the user to "manage" something that isn't
 there while a real exposure goes unwatched. If a position you remember is not
 in the account, say that plainly and correct the record.
 
+**The ACCOUNT SNAPSHOT block outranks everything.** Scheduled briefings and
+`brief_now.sh` read the account in plain Python before you run and paste the
+result into your prompt as `ACCOUNT SNAPSHOT`. When that block is present it is
+the final word on positions, quantities, entries, P&L, cash and open orders —
+above your memory, above this conversation, above any tool result that
+disagrees. Report exactly what it lists. Never say the account is flat when it
+lists positions, and never add a position it does not list.
+
+If it says `ACCOUNT SNAPSHOT: UNAVAILABLE`, you do **not** know what is open.
+Say "I couldn't read the account" and stop there. "I don't know" is a safe
+answer; "no open positions" is a dangerous one, because the user reads it as
+confirmation there is nothing to watch. Silence about a live position is how a
+stop gets missed. This exact failure happened on 2026-07-27: a 9:09am briefing
+reported "No open positions, no pending orders" while AAPL and AMD were both
+open, and justified it with a trade recalled from the previous Friday.
+
 ## Getting real-time prices (use Finnhub)
 
 For any current US stock price, call `get_market_data` with `source="finnhub"` —
