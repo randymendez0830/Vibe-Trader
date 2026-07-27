@@ -128,7 +128,16 @@ def is_option(symbol: str) -> bool:
 
 
 # ------------------------------- checks ------------------------------------
-def check_positions(tc, plans: dict, state: dict, auto_exit: bool) -> list[str]:
+def close_position(tc, symbol: str) -> tuple[bool, str]:
+    try:
+        tc.close_position(symbol)
+        return True, "Closed it for you."
+    except Exception as exc:                                   # noqa: BLE001
+        return False, f"Auto-close FAILED: {exc}\nClose it manually."
+
+
+def check_positions(tc, plans: dict, state: dict, auto_exit: bool,
+                    exit_targets: bool = True) -> list[str]:
     msgs: list[str] = []
     plan_by_sym = {p["symbol"].upper(): p for p in plans.get("positions", [])}
 
@@ -167,11 +176,8 @@ def check_positions(tc, plans: dict, state: dict, auto_exit: bool) -> list[str]:
                         f"{pct:+.2f}%  (${pnl:+,.2f})\n"
                         f"Stop was {stop_px if stop_px else f'{stop_pct:+.1f}%'}")
                 if auto_exit:
-                    try:
-                        tc.close_position(p.symbol)
-                        line += "\n✅ Position CLOSED automatically."
-                    except Exception as exc:                   # noqa: BLE001
-                        line += f"\n❌ Auto-close FAILED: {exc}\nClose it manually."
+                    ok, note = close_position(tc, p.symbol)
+                    line += f"\n{'✅' if ok else '❌'} {note}"
                 else:
                     line += "\n(no auto-exit — run with --auto-exit to close these)"
                 msgs.append(line)
@@ -180,12 +186,19 @@ def check_positions(tc, plans: dict, state: dict, auto_exit: bool) -> list[str]:
         elif hit_targ:
             key = f"target:{sym}:{et_now().date()}"
             if not state.get(key):
-                msgs.append(f"🎯 TARGET HIT — {sym}\n"
-                            f"Price {price:,.2f} ({src}) = {pct:+.2f}% "
-                            f"(${pnl:+,.2f})\n"
-                            f"Target was "
-                            f"{targ_px if targ_px else f'{targ_pct:+.1f}%'}. "
-                            f"Consider taking profit.")
+                line = (f"🎯 TARGET HIT — {sym}\n"
+                        f"Price {price:,.2f} ({src}) = {pct:+.2f}% "
+                        f"(${pnl:+,.2f})\n"
+                        f"Target was "
+                        f"{targ_px if targ_px else f'{targ_pct:+.1f}%'}.")
+                if auto_exit and exit_targets:
+                    ok, note = close_position(tc, p.symbol)
+                    line += f"\n{'✅ Profit taken. ' if ok else '❌ '}{note}"
+                elif auto_exit:
+                    line += "\nConsider taking profit. (--stops-only is set, so I left it open.)"
+                else:
+                    line += "\nConsider taking profit."
+                msgs.append(line)
                 state[key] = True
 
         elif abs(pct) >= BIG_MOVE_PCT:
@@ -236,6 +249,9 @@ def check_alerts(plans: dict, state: dict) -> list[str]:
 def main() -> None:
     auto_exit = "--auto-exit" in sys.argv
     quiet = "--quiet" in sys.argv
+    # --auto-exit closes BOTH sides: stops and targets. --stops-only keeps the
+    # old behaviour where a winner is only reported and left running.
+    exit_targets = "--stops-only" not in sys.argv
 
     if not market_open() and "--force" not in sys.argv:
         if not quiet:
@@ -260,7 +276,8 @@ def main() -> None:
     state = {k: v for k, v in state.items() if today in k}
 
     tc = alpaca_client()
-    msgs = check_positions(tc, plans, state, auto_exit) + check_alerts(plans, state)
+    msgs = (check_positions(tc, plans, state, auto_exit, exit_targets)
+            + check_alerts(plans, state))
 
     if msgs:
         body = f"⚡ Watchdog {et_now():%-I:%M %p ET}\n\n" + "\n\n".join(msgs)

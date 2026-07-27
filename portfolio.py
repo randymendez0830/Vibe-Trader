@@ -30,6 +30,8 @@ Usage:
 
 from __future__ import annotations
 
+import json
+import pathlib
 import re
 import sys
 
@@ -209,6 +211,55 @@ def footer_text(summary_path: str | None = None) -> str:
     return f"Verified with Alpaca {stamp}: {body}"
 
 
+def save(path: str) -> None:
+    """Record the account as it stands, to compare against later."""
+    try:
+        acct = read_account()
+    except SnapshotError:
+        acct = None                      # a failed read must not look like "flat"
+    pathlib.Path(path).write_text(json.dumps(acct))
+
+
+def diff(path: str) -> str:
+    """What actually changed since save() — read from the broker, not claimed.
+
+    The agent reporting "I bought NVDA" is a claim. This is the receipt. If an
+    order was rejected, silently not placed, or filled at a different size, the
+    difference shows up here and nowhere else.
+    """
+    try:
+        before = json.loads(pathlib.Path(path).read_text())
+    except (OSError, ValueError):
+        return ""
+    if before is None:
+        return ""                        # nothing trustworthy to compare against
+    try:
+        after = read_account()
+    except SnapshotError as exc:
+        return f"(Could not verify what changed: {exc})"
+
+    old = {p["symbol"]: p for p in before.get("positions", [])}
+    new = {p["symbol"]: p for p in after["positions"]}
+
+    lines = []
+    for sym, p in new.items():
+        if sym not in old:
+            lines.append(f"BOUGHT {sym} — {_qty(p['qty'])} at {p['entry']:,.2f} "
+                         f"(${abs(p['value']):,.2f})")
+        elif abs(p["qty"]) > abs(old[sym]["qty"]):
+            lines.append(f"ADDED to {sym} — {_qty(old[sym]['qty'])} to {_qty(p['qty'])}")
+    for sym, p in old.items():
+        if sym not in new:
+            lines.append(f"CLOSED {sym} — {_qty(p['qty'])} out, "
+                         f"last seen {p['pct']:+.2f}% (${p['pnl']:+,.2f})")
+        elif abs(p["qty"]) > abs(new[sym]["qty"]):
+            lines.append(f"TRIMMED {sym} — {_qty(p['qty'])} down to {_qty(new[sym]['qty'])}")
+
+    if not lines:
+        return "No orders filled — the account is unchanged."
+    return "\n".join(lines)
+
+
 def main() -> int:
     mode = sys.argv[1] if len(sys.argv) > 1 else "snapshot"
     if mode == "snapshot":
@@ -216,6 +267,17 @@ def main() -> int:
         return 0
     if mode == "footer":
         print(footer_text(sys.argv[2] if len(sys.argv) > 2 else None))
+        return 0
+    if mode in ("save", "diff"):
+        if len(sys.argv) < 3:
+            print(f"{mode} needs a file path", file=sys.stderr)
+            return 2
+        if mode == "save":
+            save(sys.argv[2])
+        else:
+            out = diff(sys.argv[2])
+            if out:
+                print(out)
         return 0
     print(f"unknown mode: {mode}", file=sys.stderr)
     return 2

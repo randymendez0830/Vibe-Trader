@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 # ONE command to bring the whole system up.
 #
-#   ./start.sh                                        alerts only
-#   ./start.sh --auto-exit                            alerts + auto-close on stops
-#   VIBE_BRIEFINGS="premarket,entry,close" ./start.sh --auto-exit
+#   ./start.sh                                        alerts only, never trades
+#   ./start.sh --auto-exit                            + auto-close on stops AND targets
+#   ./start.sh --auto-exit --stops-only               + auto-close on stops, let winners run
+#   ./start.sh --auto-exit --auto-trade               + place trades itself (PAPER)
+#   VIBE_BRIEFINGS="premarket,entry,close" ./start.sh --auto-exit --auto-trade
+#
+# Nothing places an order without --auto-trade. With it, the ceiling is
+# VIBE_MAX_ORDER_USD per position (default $2000) and VIBE_MAX_TRADES per day
+# (default 2), on the paper account only.
 #
 # Starts, in order:
 #   1. the backend API server        (needed by the Telegram chat bot)

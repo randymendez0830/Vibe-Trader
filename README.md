@@ -154,6 +154,29 @@ touching real funds. Full step-by-step guide: **[docs/ALPACA_PAPER_SETUP.md](doc
 
 Quick note on the two platforms people ask about: **TradingView** isn't a broker (it's charts/alerts — the agent can't trade through it), and **Robinhood** has no paper account (connecting it = real money from day one). Alpaca Paper is the right place to start. Interactive Brokers and Tiger paper accounts also work if you prefer them.
 
+**Letting it run itself (paper).** `./start.sh --auto-exit --auto-trade` gives you
+the full loop: it looks for a trade at 10:00, 11:30, 13:00 and 14:30 ET, runs the
+eight-section pre-trade checklist, and places at most one position per pass
+within its limits. The watchdog then closes it on either side — stop *or* target
+— and texts you each time.
+
+```bash
+VIBE_WATCHLIST="SPY, NVDA, AMD, CDNS" VIBE_MAX_ORDER_USD=1500 VIBE_MAX_TRADES=2 \
+  ./start.sh --auto-exit --auto-trade
+```
+
+| Knob | Default | Does |
+|---|---|---|
+| `--auto-trade` | **off** | Nothing ever places an order without this |
+| `--stops-only` | off | Auto-close losers but let winners run |
+| `VIBE_MAX_ORDER_USD` | 2000 | Ceiling on any single position |
+| `VIBE_MAX_TRADES` | 2 | Filled trades per day, hard stop |
+| `VIBE_TRADE_TIMES` | 1000,1130,1300,1430 | When it looks (never the first 30 min) |
+
+Every trade text ends with a `WHAT CHANGED:` line built by diffing the account
+before and after — the broker's receipt, not the agent's account of itself. If it
+says it bought something and didn't, that line is where you find out.
+
 **Check what you actually hold, any time:**
 ```bash
 python portfolio.py snapshot     # positions, P&L, cash and open orders, straight from Alpaca
