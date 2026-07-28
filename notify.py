@@ -96,6 +96,36 @@ def _tail_at_boundary(text: str, limit: int) -> str:
     return tail
 
 
+# When a run dies, the output is a stack trace. A phone must get one clear
+# sentence, not 40 lines of traceback (which is what happened when the API
+# credits ran out mid-day).
+_KNOWN_FAILURES = (
+    (re.compile(r"credit balance is too low", re.I),
+     "Out of Anthropic API credits, so this AI pass was skipped. Top up at "
+     "console.anthropic.com -> Plans & Billing and the next scheduled pass "
+     "resumes on its own. Stops and targets are still protected -- the "
+     "watchdog runs without credits."),
+    (re.compile(r"rate.?limit|overloaded|529", re.I),
+     "The AI provider is overloaded or rate-limiting. This pass was skipped; "
+     "the next scheduled one will retry. The watchdog is unaffected."),
+    (re.compile(r"authentication|invalid.{0,10}api.?key|401", re.I),
+     "The Anthropic API key was rejected. Check ANTHROPIC_API_KEY in "
+     "~/.vibe-trading/.env. The watchdog is unaffected."),
+)
+
+
+def _failure_summary(raw: str) -> str:
+    for pat, msg in _KNOWN_FAILURES:
+        if pat.search(raw):
+            return "⚠️ " + msg
+    lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
+    err = next((ln for ln in reversed(lines)
+                if re.match(r"[\w.]+(Error|Exception)\b", ln)),
+               lines[-1] if lines else "unknown error")
+    return ("⚠️ This pass hit an error and was skipped:\n" + err[:300]
+            + "\nThe watchdog is unaffected; the next scheduled pass will run.")
+
+
 def summarize(path: str) -> str:
     """Pull the human-facing reply out of a CLI run and make it phone-safe."""
     try:
@@ -117,6 +147,9 @@ def summarize(path: str) -> str:
             raw = raw[i + len(marker):] if marker == "briefing:" else raw[i:]
             break
     else:
+        # 2b. The run crashed before producing an answer: one clear sentence.
+        if "Traceback (most recent call last)" in raw or "ProviderStreamError" in raw:
+            return _failure_summary(raw)
         # 3. No marker: drop CLI scaffolding, keep the whole answer.
         raw = _strip_noise(raw)
 
