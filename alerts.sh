@@ -52,12 +52,19 @@ MAX_TRADES_PER_DAY="${VIBE_MAX_TRADES:-2}"      # hard stop on how busy it gets
 # card as ./brief_now.sh call. Enable: VIBE_BRIEFINGS="premarket,signal,close"
 BRIEFINGS="${VIBE_BRIEFINGS:-premarket,open,entry,midday,powerhour,close}"
 
-# The names the briefings look at. This USED to be undefined -- the prompts said
-# "my watchlist" and never said what that was, so the model invented a different
-# list every run. A ticker mentioned once (CDNS) would silently never be looked
-# at again. Add names here, or override for one run:
-#   VIBE_WATCHLIST="SPY, NVDA, CDNS" ./start.sh
-WATCHLIST="${VIBE_WATCHLIST:-SPY, QQQ, AAPL, NVDA, MSFT, TSLA, AMD, GOOGL, AMZN, META}"
+# The names the briefings and trade passes look at. Resolution order:
+#   1. VIBE_WATCHLIST env var (one-off override for a single run)
+#   2. ~/.vibe-trading/watchlist.txt (one ticker per line, # comments) -- the
+#      normal home. Re-read on EVERY pass, so edits go live with no restart.
+#   3. built-in fallback list
+# This USED to be undefined -- the prompts said "my watchlist" and never said
+# what that was, so the model invented a different list every run.
+watchlist() {
+  if [ -n "${VIBE_WATCHLIST:-}" ]; then printf '%s\n' "$VIBE_WATCHLIST"; return; fi
+  wl=$(python3 -c 'import pathlib;p=pathlib.Path.home()/".vibe-trading/watchlist.txt";print(", ".join(l.strip().upper() for l in p.read_text().splitlines() if l.strip() and not l.strip().startswith("#")) if p.exists() else "")' 2>/dev/null)
+  if [ -n "$wl" ]; then printf '%s\n' "$wl"
+  else printf '%s\n' "SPY, QQQ, AAPL, NVDA, MSFT, TSLA, AMD, GOOGL, AMZN, META"; fi
+}
 
 enabled() {  # enabled <slot> -> 0 if that briefing should run
   case ",${BRIEFINGS}," in *",$1,"*) return 0 ;; *) return 1 ;; esac
@@ -83,6 +90,7 @@ briefing() {
   sumf=$(mktemp)
   now_et=$(et_pretty)
   mkt=$(et_mkt)
+  WATCHLIST=$(watchlist)
   # Read the account in plain Python and paste it into the prompt. Telling the
   # model to "look it up" is not enough -- it once reported "no open positions"
   # while two were live. Injected facts cannot be forgotten.
@@ -92,7 +100,7 @@ briefing() {
 
 $acct
 
-MY WATCHLIST is exactly: $WATCHLIST. When a briefing says 'my watchlist', it means these names and only these. Do not substitute your own list, and if you flag a ticker outside it, say plainly that it is NOT being monitored and must be added to VIBE_WATCHLIST to be watched again.
+MY WATCHLIST is exactly: $WATCHLIST. When a briefing says 'my watchlist', it means these names and only these. Do not substitute your own list, and if you flag a ticker outside it, say plainly that it is NOT being monitored and must be added to ~/.vibe-trading/watchlist.txt to be watched again. The list is long on purpose: lead with the names that have fresh news or a notable move today, and skip the quiet ones -- you do not need to cover every name every time.
 
 $prompt
 
@@ -134,6 +142,7 @@ trade_pass() {
   sumf=$(mktemp)
   before="$STAMP_DIR/.before_$$"
   now_et=$(et_pretty)
+  WATCHLIST=$(watchlist)
   python portfolio.py save "$before" 2>/dev/null
   acct=$(python portfolio.py snapshot 2>/dev/null)
 
@@ -141,7 +150,7 @@ trade_pass() {
 
 $acct
 
-MY WATCHLIST is exactly: $WATCHLIST. You may only trade these names.
+MY WATCHLIST is exactly: $WATCHLIST. You may only trade these names. The list is long on purpose: scan for which have fresh news or a notable move today and analyze the best 2-3 candidates deeply, rather than covering every name shallowly.
 
 TRADING PASS on a PAPER account (fake money, Alpaca paper connector). Stocks only this pass -- no options.
 
@@ -198,7 +207,8 @@ if [ -n "$AUTO_TRADE" ]; then
 else
   echo "  Trading  : off (reports only -- add --auto-trade to let it place orders)"
 fi
-echo "  Watchlist: $WATCHLIST"
+echo "  Watchlist: $(watchlist)"
+echo "             (edit ~/.vibe-trading/watchlist.txt any time — live, no restart)"
 echo "  Briefings: $BRIEFINGS"
 echo "             (set VIBE_BRIEFINGS to trim cost, e.g. VIBE_BRIEFINGS=premarket,close)"
 echo "Leave this window open. Ctrl+C to stop."

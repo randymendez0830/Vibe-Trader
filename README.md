@@ -161,9 +161,13 @@ within its limits. The watchdog then closes it on either side — stop *or* targ
 — and texts you each time.
 
 ```bash
-VIBE_WATCHLIST="SPY, NVDA, AMD, CDNS" VIBE_MAX_ORDER_USD=1500 VIBE_MAX_TRADES=2 \
-  ./start.sh --auto-exit --auto-trade
+VIBE_MAX_ORDER_USD=1500 VIBE_MAX_TRADES=2 ./start.sh --auto-exit --auto-trade
 ```
+
+The watchlist lives in `~/.vibe-trading/watchlist.txt` (one ticker per line —
+start from `config/watchlist.example.txt`). It's re-read on every pass, so you
+can add or drop names while the bot is running and the next briefing sees the
+change. `VIBE_WATCHLIST="SPY, NVDA"` still works as a one-off override.
 
 | Knob | Default | Does |
 |---|---|---|

@@ -1,0 +1,34 @@
+# Your watchlist — one ticker per line. Lines starting with # are ignored.
+#
+# Copy to ~/.vibe-trading/watchlist.txt and edit any time:
+#     cp config/watchlist.example.txt ~/.vibe-trading/watchlist.txt
+# Changes are picked up on the NEXT briefing or trade pass — no restart.
+#
+# Everything here gets scanned for news/sentiment/setups. The bot leads with
+# whatever has fresh news or a notable move, so a long list is fine — but only
+# add names you'd actually take a trade in.
+
+# Index anchors (market regime read)
+SPY
+QQQ
+
+# Large caps
+AAPL
+AMD
+AMZN
+GOOGL
+META
+MSFT
+NVDA
+TSLA
+
+# Affordable underlyings — good fits for small-budget call cards
+BBWI
+CAKE
+CAVA
+CELH
+ELF
+NKE
+SOFI
+SONY
+SOUN

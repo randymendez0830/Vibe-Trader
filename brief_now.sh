@@ -18,9 +18,14 @@ source .venv/bin/activate
 now_et=$(python3 -c 'from datetime import datetime;from zoneinfo import ZoneInfo;print(datetime.now(ZoneInfo("America/New_York")).strftime("%A %Y-%m-%d %I:%M %p ET"))')
 mkt=$(python3 -c 'from datetime import datetime;from zoneinfo import ZoneInfo;n=datetime.now(ZoneInfo("America/New_York"));m=n.hour*60+n.minute;print("OPEN" if (n.weekday()<5 and 570<=m<960) else "CLOSED")')
 
-# Must match alerts.sh, or an on-demand briefing looks at different names than
-# the scheduled ones. Override per run: VIBE_WATCHLIST="CDNS, NVDA" ./brief_now.sh
-WATCHLIST="${VIBE_WATCHLIST:-SPY, QQQ, AAPL, NVDA, MSFT, TSLA, AMD, GOOGL, AMZN, META}"
+# Same watchlist resolution as alerts.sh: VIBE_WATCHLIST env override, then
+# ~/.vibe-trading/watchlist.txt (one ticker per line), then the fallback.
+if [ -n "${VIBE_WATCHLIST:-}" ]; then
+  WATCHLIST="$VIBE_WATCHLIST"
+else
+  WATCHLIST=$(python3 -c 'import pathlib;p=pathlib.Path.home()/".vibe-trading/watchlist.txt";print(", ".join(l.strip().upper() for l in p.read_text().splitlines() if l.strip() and not l.strip().startswith("#")) if p.exists() else "")' 2>/dev/null)
+  [ -n "$WATCHLIST" ] || WATCHLIST="SPY, QQQ, AAPL, NVDA, MSFT, TSLA, AMD, GOOGL, AMZN, META"
+fi
 
 ARG="${1:-status}"
 case "$ARG" in
@@ -50,7 +55,7 @@ vibe-trading run --no-rich -p "CURRENT TIME: $now_et. US MARKET IS $mkt. Trust t
 
 $ACCT
 
-MY WATCHLIST is exactly: $WATCHLIST. When a briefing says 'my watchlist', it means these names and only these. Do not substitute your own list, and if you flag a ticker outside it, say plainly that it is NOT being monitored and must be added to VIBE_WATCHLIST to be watched again.
+MY WATCHLIST is exactly: $WATCHLIST. When a briefing says 'my watchlist', it means these names and only these. Do not substitute your own list, and if you flag a ticker outside it, say plainly that it is NOT being monitored and must be added to ~/.vibe-trading/watchlist.txt to be watched again. The list is long on purpose: lead with the names that have fresh news or a notable move today, and skip the quiet ones -- you do not need to cover every name every time.
 
 $TASK
 
