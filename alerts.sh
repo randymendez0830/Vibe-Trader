@@ -46,6 +46,10 @@ MAX_TRADES_PER_DAY="${VIBE_MAX_TRADES:-2}"      # hard stop on how busy it gets
 # ONLY thing that costs Claude credits, so this is your cost dial.
 #   all six  ~$6-19/mo | three ~$3-9/mo | two ~$2-6/mo
 # Override per run:   VIBE_BRIEFINGS="premarket,close" ./alerts.sh
+#
+# Extra opt-in slot (NOT in the default list): "signal" at 10:45 texts one
+# affordable swing-call trade card for manual execution on Robinhood -- same
+# card as ./brief_now.sh call. Enable: VIBE_BRIEFINGS="premarket,signal,close"
 BRIEFINGS="${VIBE_BRIEFINGS:-premarket,open,entry,midday,powerhour,close}"
 
 # The names the briefings look at. This USED to be undefined -- the prompts said
@@ -217,6 +221,8 @@ while true; do
       # With --auto-trade on, the trade pass IS the entry check (same checklist,
       # but it can act) -- running both costs double and texts you twice.
       enabled entry && [ -z "$AUTO_TRADE" ] && briefing entry "ENTRY WINDOW. The opening range is set and the no-entry window has passed. Load the pre-trade-checklist skill and run it fully on the best candidate. Report the verdict: TRADE / WAIT FOR <specific trigger> / NO TRADE. NO TRADE is a perfectly good answer." "Entry window"
+    elif [ "$hm" -ge 1045 ] && [ "$hm" -lt 1100 ]; then
+      enabled signal && briefing signal "CALL SIGNAL for my ~\$200 Robinhood options budget. Find the ONE best swing CALL setup right now (watchlist first, but any liquid US name is allowed for this scan), or say NO TRADE. NON-NEGOTIABLE FILTERS: expiry 30-45 days out, never same-week; strike at-the-money or one strike in-the-money, delta near 0.5 -- NOT cheap far out-of-the-money strikes, those are lottery tickets and are banned; estimated premium \$120 or less, which usually means an underlying priced under about \$80; decent option volume so the bid-ask spread is tight; no earnings report inside the next 3 weeks. Run the pre-trade-checklist on the underlying first -- any veto means NO TRADE. If the best setup's contract costs over \$120, say so and either name an affordable alternative or say NO TRADE; do NOT solve affordability by going further out-of-the-money. If you cannot get a live option quote, estimate the premium from the stock price and volatility and label it ESTIMATE -- the user will verify the real price on Robinhood before entering. OUTPUT A TRADE CARD with exact numbers to tap into Robinhood: ticker; strike and expiry date; estimated cost per contract; 2-line thesis; underlying stop (exit if the stock closes below this level); profit rule (sell at +50% to +100% of premium, or on thesis break); time rule (sell by 21 days to expiry no matter what -- never hold to expiration); and the one thing that would kill the idea. NO TRADE with a reason is a perfectly good card." "Call signal"
     elif [ "$hm" -ge 1200 ] && [ "$hm" -lt 1215 ]; then
       enabled midday && briefing midday "MIDDAY CHECK. Report open positions with P&L in dollars and percent, whether any is near its stop or target, and whether this morning's thesis still holds. Midday is chop -- be skeptical of new entries." "Midday check"
     elif [ "$hm" -ge 1500 ] && [ "$hm" -lt 1515 ]; then

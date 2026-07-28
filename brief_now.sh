@@ -3,6 +3,8 @@
 #
 #   ./brief_now.sh                  general status briefing
 #   ./brief_now.sh entry            run the full pre-trade checklist
+#   ./brief_now.sh call             signal mode: one affordable swing-call card
+#                                   sized for a small Robinhood account
 #   ./brief_now.sh "how is AMD?"    any question you like
 #
 # Useful for testing that texts arrive correctly, or when you just want an
@@ -28,6 +30,9 @@ case "$ARG" in
   entry)
     TASK="ENTRY CHECK. Load the pre-trade-checklist skill and run all eight sections on the best candidate from my watchlist. Report the verdict: TRADE / WAIT FOR <specific trigger> / NO TRADE, and which veto stopped it if any. NO TRADE is a good answer."
     LABEL="Entry check" ;;
+  call)
+    TASK="CALL SIGNAL for my ~\$200 Robinhood options budget. Find the ONE best swing CALL setup right now (watchlist first, but any liquid US name is allowed for this scan), or say NO TRADE. NON-NEGOTIABLE FILTERS: expiry 30-45 days out, never same-week; strike at-the-money or one strike in-the-money, delta near 0.5 -- NOT cheap far out-of-the-money strikes, those are lottery tickets and are banned; estimated premium \$120 or less, which usually means an underlying priced under about \$80; decent option volume so the bid-ask spread is tight; no earnings report inside the next 3 weeks. Run the pre-trade-checklist on the underlying first -- any veto means NO TRADE. If the best setup's contract costs over \$120, say so and either name an affordable alternative or say NO TRADE; do NOT solve affordability by going further out-of-the-money. If you cannot get a live option quote, estimate the premium from the stock price and volatility and label it ESTIMATE -- I will verify the real price on Robinhood before entering. OUTPUT A TRADE CARD with exact numbers I can tap into Robinhood: ticker; strike and expiry date; estimated cost per contract; 2-line thesis; underlying stop (exit if the stock closes below this level); profit rule (sell at +50% to +100% of premium, or on thesis break); time rule (sell by 21 days to expiry no matter what -- never hold to expiration); and the one thing that would kill the idea. NO TRADE with a reason is a perfectly good card."
+    LABEL="Call signal" ;;
   *)
     TASK="The user asks: $ARG"
     LABEL="On-demand briefing" ;;
