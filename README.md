@@ -187,6 +187,11 @@ every text ends with a one-line `Verified with Alpaca ...` footer built from it 
 because asking the model to look up its own positions turned out not to be
 reliable enough for something you make money decisions on.
 
+**Thinking of going real with a small account ($200–500) or Robinhood?** Read
+**[docs/SMALL_ACCOUNT_PLAN.md](docs/SMALL_ACCOUNT_PLAN.md)** first — the honest
+math on tiny options accounts, why there is no legitimate Robinhood API, the
+signal-mode alternative, and the phased plan with go-live gates.
+
 **Ready for real money later?** Once your Alpaca paper POC has earned your trust, see **[docs/REAL_MONEY_BROKERS.md](docs/REAL_MONEY_BROKERS.md)** — which brokers actually support live automated trading in this tool (short answer: graduate to Alpaca Live, since it's the same connector you already validated), the "mandate" safety gate that stops real trades from happening by accident, and a slow, evidence-based plan for going live.
 
 ### Things to try first

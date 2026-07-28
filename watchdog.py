@@ -164,6 +164,21 @@ def check_positions(tc, plans: dict, state: dict, auto_exit: bool,
         stop_px = float(plan["stop"]) if plan.get("stop") else None
         targ_px = float(plan["target"]) if plan.get("target") else None
 
+        # A fixed stop within 2% of the actual entry (or above it) is almost
+        # always a stale number in watch_plans.json -- the plan was written for
+        # a different entry. This exact mistake armed a 0.16% stop once (530
+        # against a 530.85 fill). Warn once a day rather than silently letting
+        # ordinary wiggle stop the position out.
+        if stop_px is not None and entry and (entry - stop_px) / entry < 0.02:
+            key = f"stalestop:{sym}:{et_now().date()}"
+            if not state.get(key):
+                room = (entry - stop_px) / entry * 100
+                msgs.append(f"⚠️ {sym}: fixed stop {stop_px:,.2f} is "
+                            f"{'ABOVE entry' if room <= 0 else f'only {room:.1f}% below entry'} "
+                            f"{entry:,.2f} — probably stale in watch_plans.json. "
+                            f"Normal wiggle will trigger it. Use stop_pct instead.")
+                state[key] = True
+
         hit_stop = (stop_px is not None and price <= stop_px) or pct <= stop_pct
         hit_targ = (targ_px is not None and price >= targ_px) or pct >= targ_pct
         src = "live" if live else "delayed"

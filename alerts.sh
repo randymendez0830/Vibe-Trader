@@ -34,8 +34,11 @@ AUTO_TRADE=""
 case " $* " in *" --auto-trade "*) AUTO_TRADE="yes" ;; esac
 
 # When to look for a new trade. Never before 10:00 (the checklist vetoes the
-# first 30 minutes) and never after 15:30. Override: VIBE_TRADE_TIMES="1000,1400"
-TRADE_TIMES="${VIBE_TRADE_TIMES:-1000,1130,1300,1430}"
+# first 30 minutes) and never after 15:30. Default starts at 10:30, not 10:00:
+# at 10:00 the opening range has *just* formed and the pass would be judging a
+# 30-minute-old chart the moment it becomes legal. Give it something to read.
+# Override: VIBE_TRADE_TIMES="1000,1400"
+TRADE_TIMES="${VIBE_TRADE_TIMES:-1030,1200,1400}"
 MAX_ORDER_USD="${VIBE_MAX_ORDER_USD:-2000}"     # ceiling on any single position
 MAX_TRADES_PER_DAY="${VIBE_MAX_TRADES:-2}"      # hard stop on how busy it gets
 
@@ -187,6 +190,7 @@ else
 fi
 if [ -n "$AUTO_TRADE" ]; then
   echo "  Trading  : ON — passes at $TRADE_TIMES ET, max \$$MAX_ORDER_USD each, $MAX_TRADES_PER_DAY/day  (PAPER)"
+  echo "             (entry briefing is folded into the trade passes — no double texts)"
 else
   echo "  Trading  : off (reports only -- add --auto-trade to let it place orders)"
 fi
@@ -210,7 +214,9 @@ while true; do
     elif [ "$hm" -ge 932 ] && [ "$hm" -lt 945 ]; then
       enabled open && briefing open "OPENING BELL REACTION. The market just opened. Report how my open positions and watchlist opened versus yesterday's close: gap up, gap down or flat, and anything moving hard. Per the checklist, do NOT enter new positions in the first 30 minutes -- report only." "Opening bell"
     elif [ "$hm" -ge 1000 ] && [ "$hm" -lt 1015 ]; then
-      enabled entry && briefing entry "ENTRY WINDOW. The opening range is set and the no-entry window has passed. Load the pre-trade-checklist skill and run it fully on the best candidate. Report the verdict: TRADE / WAIT FOR <specific trigger> / NO TRADE. NO TRADE is a perfectly good answer." "Entry window"
+      # With --auto-trade on, the trade pass IS the entry check (same checklist,
+      # but it can act) -- running both costs double and texts you twice.
+      enabled entry && [ -z "$AUTO_TRADE" ] && briefing entry "ENTRY WINDOW. The opening range is set and the no-entry window has passed. Load the pre-trade-checklist skill and run it fully on the best candidate. Report the verdict: TRADE / WAIT FOR <specific trigger> / NO TRADE. NO TRADE is a perfectly good answer." "Entry window"
     elif [ "$hm" -ge 1200 ] && [ "$hm" -lt 1215 ]; then
       enabled midday && briefing midday "MIDDAY CHECK. Report open positions with P&L in dollars and percent, whether any is near its stop or target, and whether this morning's thesis still holds. Midday is chop -- be skeptical of new entries." "Midday check"
     elif [ "$hm" -ge 1500 ] && [ "$hm" -lt 1515 ]; then

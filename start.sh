@@ -36,6 +36,10 @@ source .venv/bin/activate
 [ -f "$HOME/.vibe-trading/alpaca.json" ] || say "!! no ~/.vibe-trading/alpaca.json — trading/watchdog will be limited. See docs/ALPACA_PAPER_SETUP.md"
 grep -q "sk-ant" "$HOME/.vibe-trading/.env" 2>/dev/null || say "!! no Anthropic key in ~/.vibe-trading/.env — briefings will fail. Run: cp .env ~/.vibe-trading/.env"
 
+# Patch the chat bot so Telegram chats see your real account (re-applies after
+# any pip upgrade; no-op when already patched).
+python install_chat_snapshot.py --quiet || say "!! chat snapshot patch failed — the CHAT bot may not see live positions (briefings unaffected)"
+
 # --- 1. don't double-run ----------------------------------------------------
 if launchctl list 2>/dev/null | grep -q com.vibetrader.alerts; then
   say ""
