@@ -235,7 +235,13 @@ def check_positions(tc, plans: dict, state: dict, auto_exit: bool,
 
 
 def check_alerts(plans: dict, state: dict) -> list[str]:
-    """Price alerts for tickers you're watching but don't own yet."""
+    """Price alerts for tickers you're watching but don't own yet.
+
+    Fires ONCE per crossing, not once per day: the key persists until price
+    retreats ~1% back through the level, which re-arms it. (The dated keys we
+    used before re-rang the same bell every morning a level stayed crossed —
+    CDNS above 330 alerted two days running.)
+    """
     msgs = []
     for a in plans.get("alerts", []):
         sym = str(a.get("symbol", "")).upper()
@@ -246,18 +252,24 @@ def check_alerts(plans: dict, state: dict) -> list[str]:
             continue
         note = a.get("note", "")
         above, below = a.get("above"), a.get("below")
-        if above is not None and px >= float(above):
-            key = f"above:{sym}:{above}:{et_now().date()}"
-            if not state.get(key):
-                msgs.append(f"🔔 {sym} crossed ABOVE {above} — now {px:,.2f}"
-                            + (f"\n{note}" if note else ""))
-                state[key] = True
-        if below is not None and px <= float(below):
-            key = f"below:{sym}:{below}:{et_now().date()}"
-            if not state.get(key):
-                msgs.append(f"🔔 {sym} dropped BELOW {below} — now {px:,.2f}"
-                            + (f"\n{note}" if note else ""))
-                state[key] = True
+        if above is not None:
+            key = f"above:{sym}:{above}"
+            if px >= float(above):
+                if not state.get(key):
+                    msgs.append(f"🔔 {sym} crossed ABOVE {above} — now {px:,.2f}"
+                                + (f"\n{note}" if note else ""))
+                    state[key] = True
+            elif state.get(key) and px < float(above) * 0.99:
+                state.pop(key, None)                       # re-armed
+        if below is not None:
+            key = f"below:{sym}:{below}"
+            if px <= float(below):
+                if not state.get(key):
+                    msgs.append(f"🔔 {sym} dropped BELOW {below} — now {px:,.2f}"
+                                + (f"\n{note}" if note else ""))
+                    state[key] = True
+            elif state.get(key) and px > float(below) * 1.01:
+                state.pop(key, None)                       # re-armed
     return msgs
 
 
@@ -286,9 +298,11 @@ def main() -> None:
                   f"Only open positions are being watched. To arm alerts:\n"
                   f"  cp config/watch_plans.example.json {PLANS_FILE}")
             state[key] = True
-    # Drop yesterday's memory so alerts can fire fresh each day.
+    # Drop yesterday's dated memory so position alerts fire fresh each day.
+    # Crossing alerts (above:/below:) persist until price re-arms them.
     today = str(et_now().date())
-    state = {k: v for k, v in state.items() if today in k}
+    state = {k: v for k, v in state.items()
+             if today in k or k.startswith(("above:", "below:"))}
 
     tc = alpaca_client()
     msgs = (check_positions(tc, plans, state, auto_exit, exit_targets)
